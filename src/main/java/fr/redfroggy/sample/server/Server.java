@@ -1,0 +1,39 @@
+package fr.redfroggy.sample.server;
+
+import fr.redfroggy.sample.server.services.ServerService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+
+import javax.annotation.PostConstruct;
+
+/**
+ * Server application
+ */
+@SpringBootApplication
+@EnableAutoConfiguration
+@Slf4j
+public class Server {
+
+    @Autowired
+    protected ServerService serverService;
+
+    @PostConstruct
+    public void run() {
+        serverService.run();
+    }
+
+    public static void main(String[] args) throws Exception {
+        Server.log.info("Server is running");
+        SpringApplication app = new SpringApplication(Server.class);
+        app.setWebEnvironment(false);
+        ConfigurableApplicationContext ctx = app.run(args);
+
+        System.exit(SpringApplication.exit(ctx));
+        Server.log.info("Server stopped");
+    }
+
+}
