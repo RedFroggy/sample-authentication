@@ -21,36 +21,35 @@
         <java.version>1.7</java.version>
     </properties>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.4.0</version>
+                <configuration>
+                    <executable>java</executable>
+                    <mainClass>${exec.mainClass}</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <profiles>
         <profile>
             <id>server</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.4.0</version>
-                        <configuration>
-                            <mainClass>fr.redfroggy.sample.tpa.server.Server</mainClass>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <exec.mainClass>fr.redfroggy.sample.tpa.server.Server</exec.mainClass>
+            </properties>
         </profile>
         <profile>
             <id>client</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.4.0</version>
-                        <configuration>
-                            <mainClass>fr.redfroggy.sample.tpa.client.Client</mainClass>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <exec.mainClass>fr.redfroggy.sample.tpa.client.Client</exec.mainClass>
+            </properties>
         </profile>
     </profiles>
 
