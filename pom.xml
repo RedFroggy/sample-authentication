@@ -22,6 +22,23 @@
     </properties>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources/${profile}</directory>
+            </resource>
+            <resource>
+                <directory>src/main/resources/common</directory>
+            </resource>
+        </resources>
+        <testSourceDirectory>src/test/java</testSourceDirectory>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>src/main/resources/common</directory>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -37,17 +54,31 @@
 
     <profiles>
         <profile>
+            <id>test</id>
+            <properties>
+                <profile>test</profile>
+            </properties>
+        </profile>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <profile>dev</profile>
+            </properties>
+        </profile>
+        <profile>
             <id>server</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
+                <profile>prod</profile>
                 <exec.mainClass>fr.redfroggy.sample.tpa.server.Server</exec.mainClass>
             </properties>
         </profile>
         <profile>
             <id>client</id>
             <properties>
+                <profile>prod</profile>
                 <exec.mainClass>fr.redfroggy.sample.tpa.client.Client</exec.mainClass>
             </properties>
         </profile>
