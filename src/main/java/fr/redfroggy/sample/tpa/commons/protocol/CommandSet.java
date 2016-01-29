@@ -1,4 +1,4 @@
-package fr.redfroggy.sample.commons.protocol;
+package fr.redfroggy.sample.tpa.commons.protocol;
 
 public class CommandSet {
 

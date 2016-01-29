@@ -1,8 +1,8 @@
-package fr.redfroggy.sample.server.configuration;
+package fr.redfroggy.sample.tpa.server.configuration;
 
-import fr.redfroggy.sample.commons.security.Algorithm;
-import fr.redfroggy.sample.commons.security.CipherService;
-import fr.redfroggy.sample.commons.utils.BytesUtils;
+import fr.redfroggy.sample.tpa.commons.security.Algorithm;
+import fr.redfroggy.sample.tpa.commons.security.CipherService;
+import fr.redfroggy.sample.tpa.commons.utils.BytesUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

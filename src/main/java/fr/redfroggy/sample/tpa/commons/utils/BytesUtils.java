@@ -1,4 +1,4 @@
-package fr.redfroggy.sample.commons.utils;
+package fr.redfroggy.sample.tpa.commons.utils;
 
 import com.google.common.primitives.Bytes;
 import lombok.AccessLevel;

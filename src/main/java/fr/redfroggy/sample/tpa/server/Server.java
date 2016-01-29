@@ -1,6 +1,6 @@
-package fr.redfroggy.sample.server;
+package fr.redfroggy.sample.tpa.server;
 
-import fr.redfroggy.sample.server.services.ServerService;
+import fr.redfroggy.sample.tpa.server.services.ServerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;

@@ -1,4 +1,4 @@
-package fr.redfroggy.sample.client.configuration;
+package fr.redfroggy.sample.tpa.client.configuration;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

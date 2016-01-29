@@ -1,10 +1,10 @@
-package fr.redfroggy.sample.client.services;
+package fr.redfroggy.sample.tpa.client.services;
 
 import com.google.common.primitives.Bytes;
-import fr.redfroggy.sample.commons.exceptions.AuthenticationException;
-import fr.redfroggy.sample.commons.protocol.CommandSet;
-import fr.redfroggy.sample.commons.security.CipherService;
-import fr.redfroggy.sample.commons.utils.BytesUtils;
+import fr.redfroggy.sample.tpa.commons.exceptions.AuthenticationException;
+import fr.redfroggy.sample.tpa.commons.protocol.CommandSet;
+import fr.redfroggy.sample.tpa.commons.security.CipherService;
+import fr.redfroggy.sample.tpa.commons.utils.BytesUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;

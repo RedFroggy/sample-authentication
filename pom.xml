@@ -31,7 +31,7 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>1.4.0</version>
                         <configuration>
-                            <mainClass>fr.redfroggy.sample.server.Server</mainClass>
+                            <mainClass>fr.redfroggy.sample.tpa.server.Server</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -46,7 +46,7 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>1.4.0</version>
                         <configuration>
-                            <mainClass>fr.redfroggy.sample.client.Client</mainClass>
+                            <mainClass>fr.redfroggy.sample.tpa.client.Client</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -92,12 +92,5 @@
         </dependency>
 
     </dependencies>
-
-    <exclusions>
-        <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-    </exclusions>
 
 </project>

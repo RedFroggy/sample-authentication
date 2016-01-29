@@ -1,4 +1,4 @@
-package fr.redfroggy.sample.commons.security;
+package fr.redfroggy.sample.tpa.commons.security;
 
 import lombok.Getter;
 

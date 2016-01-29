@@ -1,4 +1,4 @@
-package fr.redfroggy.sample.commons.exceptions;
+package fr.redfroggy.sample.tpa.commons.exceptions;
 
 /**
  * Exception used when authentication process failed

@@ -1,7 +1,7 @@
-package fr.redfroggy.sample.commons.security;
+package fr.redfroggy.sample.tpa.commons.security;
 
 import com.google.common.primitives.Bytes;
-import fr.redfroggy.sample.commons.utils.BytesUtils;
+import fr.redfroggy.sample.tpa.commons.utils.BytesUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
