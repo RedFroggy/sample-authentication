@@ -2,6 +2,7 @@ package fr.redfroggy.sample.tpa.client.services;
 
 import com.google.common.primitives.Bytes;
 import fr.redfroggy.sample.tpa.commons.exceptions.AuthenticationException;
+import fr.redfroggy.sample.tpa.commons.exceptions.CommunicationException;
 import fr.redfroggy.sample.tpa.commons.exceptions.TransmissionException;
 import fr.redfroggy.sample.tpa.commons.protocol.CommandSet;
 import fr.redfroggy.sample.tpa.commons.services.AbstractCommunicationService;
@@ -61,8 +62,6 @@ public class ClientService extends AbstractCommunicationService {
             socket.close();
             log.info("Client shutdown");
 
-        } catch (TransmissionException e) {
-            log.error("Transmission error", e);
         } catch (AuthenticationException e) {
             log.error("Authentication failed", e);
         } catch (IOException e) {
@@ -84,12 +83,9 @@ public class ClientService extends AbstractCommunicationService {
             // Client Authentication : Required challenge to server
             byte[] rndS1 = send(CommandSet.getChallenge());
             byte[] rndC1 = cipherService.random();
-            log.debug("rndS1: {}", BytesUtils.bytesToHex(rndS1, ' '));
-            log.debug("rndC1: {}", BytesUtils.bytesToHex(rndC1, ' '));
 
             byte[] ek1 = cipherService.encode(Bytes.concat(rndC1, rndS1));
             cipherService.resetIV();
-            log.debug("ek1: {}", BytesUtils.bytesToHex(ek1, ' '));
 
             // Client Authentication : Send challenge response to server
             byte[] c1 = send(CommandSet.authenticateClient(ek1));
@@ -100,31 +96,27 @@ public class ClientService extends AbstractCommunicationService {
 
             // Server Authentication : Send challenge to server
             byte[] rndC2 = cipherService.random();
-            log.debug("rndC2: {}", BytesUtils.bytesToHex(rndC2, ' '));
             byte[] ek2 = send(CommandSet.authenticateServer(rndC2));
-            log.debug("ek2: {}", BytesUtils.bytesToHex(ek2, ' '));
             byte[] c2 = cipherService.decode(ek2);
-            log.debug("c2: {}", BytesUtils.bytesToHex(c2, ' '));
+
+            // Server Authentication : Check server response
             cipherService.resetIV();
             byte[] rndS2 = Arrays.copyOfRange(c2, 0, 16);
             byte[] rndC2p = Arrays.copyOfRange(c2, 16, 32);
-
-            log.debug("rndS2: {}", BytesUtils.bytesToHex(rndS2, ' '));
-            log.debug("rndC2: {}", BytesUtils.bytesToHex(rndC2, ' '));
-            log.debug("rndC2p: {}", BytesUtils.bytesToHex(rndC2p, ' '));
 
             if (!Arrays.equals(rndC2, rndC2p)) {
                 throw new AuthenticationException("Authentication failed, Server verification mismatch");
             }
             log.debug("Server verification success");
 
+            // Set session key
             setSessionKey(rndC1, rndS2);
             log.info("Authentication succeed");
 
         } catch (GeneralSecurityException e) {
             throw new AuthenticationException("Authentication failed", e);
-        } catch (IOException e) {
-            throw new AuthenticationException("Authentication failed because of transmission error", e);
+        } catch (CommunicationException e) {
+            throw new AuthenticationException("Authentication failed because of communication error", e);
         }
     }
 
@@ -132,27 +124,33 @@ public class ClientService extends AbstractCommunicationService {
      * Send message to server
      *
      * @param msg Message content
-     * @throws Exception If an error occurred
+     * @throws CommunicationException If an error occurred
      */
-    public void sendMessage(String msg) throws Exception {
-        byte[] ekMsg = cipherService.encode(msg.getBytes());
-        byte[] result = send(CommandSet.sendMessage(ekMsg));
+    public void sendMessage(String msg) throws CommunicationException {
+        try {
+            byte[] ekMsg = cipherService.encode(msg.getBytes());
+            byte[] result = send(CommandSet.sendMessage(ekMsg));
 
-        if (result[0] == CommandSet.Instruction.RCV.getCode()) {
-            // Check if checksum is equal
-            byte[] crc32ori = BytesUtils.crc32(msg.getBytes());
-            byte[] crc32res = Arrays.copyOfRange(result, 1, result.length);
+            if (result[0] == CommandSet.Instruction.RCV.getCode()) {
+                // Check if checksum is equal
+                byte[] crc32ori = BytesUtils.crc32(msg.getBytes());
+                byte[] crc32res = Arrays.copyOfRange(result, 1, result.length);
 
-            if (!Arrays.equals(crc32ori, crc32res)) {
-                throw new TransmissionException("Message CRC is invalid");
+                if (!Arrays.equals(crc32ori, crc32res)) {
+                    throw new TransmissionException("Message CRC is invalid");
+                } else {
+                    log.debug("CRC valid");
+                }
+
+            } else if (result[0] == CommandSet.Instruction.ERR.getCode()) {
+                log.error("Server return error : " + new String(result).substring(1));
             } else {
-                log.debug("CRC valid");
+                log.warn("Unexpected result");
             }
-
-        } else if (result[0] == CommandSet.Instruction.ERR.getCode()) {
-            log.error("Server return error : " + new String(result).substring(1));
-        } else {
-            log.warn("Unexpected result");
+        } catch (GeneralSecurityException e) {
+            throw new CommunicationException("Cannot send message because of cryptographic error", e);
+        } catch (TransmissionException e) {
+            throw new CommunicationException("Cannot send message because of communication error", e);
         }
     }
 

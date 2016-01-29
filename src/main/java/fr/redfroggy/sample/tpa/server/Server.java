@@ -37,8 +37,7 @@ public class Server {
         SpringApplication app = new SpringApplication(Server.class);
         app.setWebEnvironment(false);
         ConfigurableApplicationContext ctx = app.run(args);
-
-        System.exit(SpringApplication.exit(ctx));
+        SpringApplication.exit(ctx);
         Server.log.info("Server stopped");
     }
 

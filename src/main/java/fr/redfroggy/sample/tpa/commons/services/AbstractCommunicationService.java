@@ -1,6 +1,7 @@
 package fr.redfroggy.sample.tpa.commons.services;
 
 import com.google.common.primitives.Bytes;
+import fr.redfroggy.sample.tpa.commons.exceptions.CommunicationException;
 import fr.redfroggy.sample.tpa.commons.security.CipherService;
 import fr.redfroggy.sample.tpa.commons.utils.BytesUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -31,9 +32,9 @@ public class AbstractCommunicationService {
      *
      * @param cmd Command to send
      * @return Receive bytes
-     * @throws IOException If a communication error occurred
+     * @throws CommunicationException If a communication error occurred
      */
-    protected byte[] send(byte[] cmd) throws IOException {
+    protected byte[] send(byte[] cmd) throws CommunicationException {
         return send(cmd, true);
     }
 
@@ -43,15 +44,19 @@ public class AbstractCommunicationService {
      * @param cmd             Command to send
      * @param waitForResponse Wait for response
      * @return Receive bytes
-     * @throws IOException If a communication error occurred
+     * @throws CommunicationException If a communication error occurred
      */
-    protected byte[] send(byte[] cmd, boolean waitForResponse) throws IOException {
-        out.write(cmd);
-        log.info("Send: {} bytes | {} | {}", cmd.length, BytesUtils.bytesToHex(cmd, ' '), new String(cmd));
-        if (waitForResponse) {
-            return receive();
-        } else {
-            return new byte[0];
+    protected byte[] send(byte[] cmd, boolean waitForResponse) throws CommunicationException {
+        try {
+            out.write(cmd);
+            log.info("Send: {} bytes | {} | {}", cmd.length, BytesUtils.bytesToHex(cmd, ' '), new String(cmd));
+            if (waitForResponse) {
+                return receive();
+            } else {
+                return new byte[0];
+            }
+        } catch (IOException e) {
+            throw new CommunicationException("Sending error", e);
         }
     }
 
@@ -59,18 +64,22 @@ public class AbstractCommunicationService {
      * Listen for server response
      *
      * @return Receive bytes
-     * @throws IOException If a communication error occurred
+     * @throws CommunicationException If a communication error occurred
      */
-    protected byte[] receive() throws IOException {
-        byte[] result = new byte[0];
-        int count;
-        do {
-            byte[] frame = new byte[FRAME_SIZE];
-            count = in.read(frame);
-            result = Bytes.concat(result, Arrays.copyOf(frame, count));
-        } while (count >= FRAME_SIZE);
-        log.info("Receive: {} bytes | {} | {}", result.length, BytesUtils.bytesToHex(result, ' '), new String(result));
-        return result;
+    protected byte[] receive() throws CommunicationException {
+        try {
+            byte[] result = new byte[0];
+            int count;
+            do {
+                byte[] frame = new byte[FRAME_SIZE];
+                count = in.read(frame);
+                result = Bytes.concat(result, Arrays.copyOf(frame, count));
+            } while (count >= FRAME_SIZE);
+            log.info("Receive: {} bytes | {} | {}", result.length, BytesUtils.bytesToHex(result, ' '), new String(result));
+            return result;
+        } catch (IOException e) {
+            throw new CommunicationException("Receiving error", e);
+        }
     }
 
     /**
@@ -105,10 +114,6 @@ public class AbstractCommunicationService {
                 session = new byte[0];
                 break;
         }
-
-        log.debug("Client random: {}", BytesUtils.bytesToHex(clientRandom, ' '));
-        log.debug("Server random: {}", BytesUtils.bytesToHex(serverRandom, ' '));
-        log.debug("Session key is now: {}", BytesUtils.bytesToHex(session, ' '));
 
         cipherService.setKey(session);
     }

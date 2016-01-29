@@ -1,7 +1,9 @@
 package fr.redfroggy.sample.tpa.server.services;
 
 import com.google.common.primitives.Bytes;
+import fr.redfroggy.sample.tpa.commons.exceptions.CommunicationException;
 import fr.redfroggy.sample.tpa.commons.exceptions.EOTException;
+import fr.redfroggy.sample.tpa.commons.exceptions.ServerException;
 import fr.redfroggy.sample.tpa.commons.protocol.CommandSet;
 import fr.redfroggy.sample.tpa.commons.services.AbstractCommunicationService;
 import fr.redfroggy.sample.tpa.commons.utils.BytesUtils;
@@ -46,8 +48,7 @@ public class ServerService extends AbstractCommunicationService {
             }
             socket.close();
         } catch (Exception e) {
-            e.printStackTrace();
-            log.info("Server socket closed with exception");
+            log.info("Server socket closed with exception", e);
             run();
         }
     }
@@ -55,9 +56,9 @@ public class ServerService extends AbstractCommunicationService {
     /**
      * Open server socket
      *
-     * @throws Exception If a transmission error occurred
+     * @throws ServerException If a transmission error occurred
      */
-    protected void listen() throws Exception {
+    protected void listen() throws ServerException {
 
         log.info("Client " + connectionSocket.getInetAddress().toString() + " connected");
         boolean endOfTransmission = false;
@@ -68,6 +69,8 @@ public class ServerService extends AbstractCommunicationService {
                 send(response, false);
             } catch (EOTException e) {
                 endOfTransmission = true;
+            } catch (CommunicationException e) {
+                throw new ServerException("Server communication error", e);
             }
         }
         log.info("Client " + connectionSocket.getInetAddress().toString() + " disconnected");
@@ -78,9 +81,9 @@ public class ServerService extends AbstractCommunicationService {
      *
      * @param command Command to interpret
      * @return Result bytes
-     * @throws Exception If an interpretation error occurred
+     * @throws ServerException If an interpretation error occurred
      */
-    protected byte[] execute(byte[] command) throws Exception {
+    protected byte[] execute(byte[] command) throws ServerException {
 
         if (command == null || command.length == 0) {
             return CommandSet.error("Command is empty");
@@ -126,21 +129,16 @@ public class ServerService extends AbstractCommunicationService {
     protected byte[] authenticateClient(byte[] data) {
         try {
             log.info("Authentication Client");
-            log.debug("data: {}", BytesUtils.bytesToHex(data, ' '));
             byte[] dkData = cipherService.decode(data);
-            log.debug("dkData: {}", BytesUtils.bytesToHex(dkData, ' '));
             byte[] challengeS = Arrays.copyOfRange(dkData, cipherService.getAlgorithm().getBlocSize(), cipherService.getAlgorithm().getBlocSize() * 2);
             byte[] challengeC = Arrays.copyOfRange(dkData, 0, cipherService.getAlgorithm().getBlocSize());
 
-            log.debug("challenge: {}", BytesUtils.bytesToHex(challenge, ' '));
-            log.debug("challengeS: {}", BytesUtils.bytesToHex(challengeS, ' '));
-            log.debug("challengeC: {}", BytesUtils.bytesToHex(challengeC, ' '));
 
             if (Arrays.equals(challengeS, challenge)) {
                 randomClient = challengeC;
+                log.debug("Client verification success");
                 return CommandSet.success();
             } else {
-                log.debug("challengeS {} != challenge {}", BytesUtils.bytesToHex(challengeS, ' '), BytesUtils.bytesToHex(challenge, ' '));
                 return CommandSet.error("Returned challenge not match");
             }
 
@@ -148,7 +146,6 @@ public class ServerService extends AbstractCommunicationService {
             log.error("Cannot decode challenge", e);
             return CommandSet.error("Cryptographic error");
         }
-
     }
 
     /**
@@ -160,21 +157,16 @@ public class ServerService extends AbstractCommunicationService {
     protected byte[] authenticateServer(byte[] data) {
         try {
             log.info("Authentication Server");
-            log.debug("data {}", BytesUtils.bytesToHex(data, ' '));
             byte[] rndServer = cipherService.random();
-            log.debug("rndServer {}", BytesUtils.bytesToHex(rndServer, ' '));
             byte[] ek = cipherService.encode(Bytes.concat(rndServer, data));
-            log.debug("ek {}", BytesUtils.bytesToHex(ek, ' '));
 
             setSessionKey(randomClient, rndServer);
-            log.info("Authentication succeed");
 
             return ek;
         } catch (GeneralSecurityException e) {
             log.error("Cannot decode challenge", e);
             return CommandSet.error("Cryptographic error");
         }
-
     }
 
     /**
