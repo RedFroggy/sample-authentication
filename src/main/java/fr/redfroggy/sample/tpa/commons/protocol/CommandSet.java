@@ -1,7 +1,13 @@
 package fr.redfroggy.sample.tpa.commons.protocol;
 
+/**
+ * Command set for client and server communication
+ */
 public class CommandSet {
 
+    /**
+     * Instructions
+     */
     public enum Instruction {
         CLG((byte) 0x13),
         AUS((byte) 0x11),
@@ -15,16 +21,32 @@ public class CommandSet {
 
         private byte code;
 
+        /**
+         * COnstruct instruction
+         *
+         * @param code Instruction code
+         */
         Instruction(byte code) {
             this.code = code;
         }
 
+        /**
+         * Instruction code
+         *
+         * @return Instruction code
+         */
         public byte getCode() {
             return code;
         }
 
+        /**
+         * Retreive an instruction from a code
+         *
+         * @param code Code of instruction
+         * @return Instruction
+         */
         public static Instruction get(byte code) {
-            for(Instruction ins : Instruction.values()) {
+            for (Instruction ins : Instruction.values()) {
                 if (code == ins.getCode()) {
                     return ins;
                 }
@@ -39,7 +61,7 @@ public class CommandSet {
      * @return Stop command
      */
     public static byte[] stop() {
-        return new byte[] { Instruction.STP.getCode() };
+        return new byte[]{Instruction.STP.getCode()};
     }
 
     /**
@@ -48,12 +70,13 @@ public class CommandSet {
      * @return Challenge command
      */
     public static byte[] getChallenge() {
-        return new byte[] { Instruction.CLG.getCode() };
+        return new byte[]{Instruction.CLG.getCode()};
     }
 
     /**
      * Get server authentication command
      *
+     * @param auth Server authentication sequence
      * @return Server authentication
      */
     public static byte[] authenticateServer(byte[] auth) {
@@ -66,6 +89,7 @@ public class CommandSet {
     /**
      * Get client authentication command
      *
+     * @param auth Client authentication sequence
      * @return Client authentication
      */
     public static byte[] authenticateClient(byte[] auth) {
@@ -78,6 +102,7 @@ public class CommandSet {
     /**
      * Get message command
      *
+     * @param message Encoded message to send
      * @return Message command
      */
     public static byte[] sendMessage(byte[] message) {
@@ -90,6 +115,7 @@ public class CommandSet {
     /**
      * Get receive command
      *
+     * @param crc Decoded message CRC32
      * @return Receive command
      */
     public static byte[] receive(byte[] crc) {
@@ -105,12 +131,13 @@ public class CommandSet {
      * @return Success command
      */
     public static byte[] success() {
-        return new byte[] { Instruction.SUC.getCode() };
+        return new byte[]{Instruction.SUC.getCode()};
     }
 
     /**
      * Get error command
      *
+     * @param detail Error detail
      * @return Error command
      */
     public static byte[] error(String detail) {
