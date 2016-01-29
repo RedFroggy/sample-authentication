@@ -68,6 +68,7 @@ public class ServerService extends AbstractCommunicationService {
                 byte[] response = execute(command);
                 send(response, false);
             } catch (EOTException e) {
+                log.info("End of transmission received", e);
                 endOfTransmission = true;
             } catch (CommunicationException e) {
                 throw new ServerException("Server communication error", e);
