@@ -27,16 +27,32 @@ public class AbstractCommunicationService {
     protected static final int FRAME_SIZE = 64;
 
     /**
-     * Send command to server
+     * Send command to server and wait for response
      *
      * @param cmd Command to send
      * @return Receive bytes
      * @throws IOException If a communication error occurred
      */
     protected byte[] send(byte[] cmd) throws IOException {
+        return send(cmd, true);
+    }
+
+    /**
+     * Send command to server
+     *
+     * @param cmd             Command to send
+     * @param waitForResponse Wait for response
+     * @return Receive bytes
+     * @throws IOException If a communication error occurred
+     */
+    protected byte[] send(byte[] cmd, boolean waitForResponse) throws IOException {
         out.write(cmd);
         log.info("Send: {} bytes | {} | {}", cmd.length, BytesUtils.bytesToHex(cmd, ' '), new String(cmd));
-        return receive();
+        if (waitForResponse) {
+            return receive();
+        } else {
+            return new byte[0];
+        }
     }
 
     /**

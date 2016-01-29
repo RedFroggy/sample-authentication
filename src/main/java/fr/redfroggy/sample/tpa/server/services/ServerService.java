@@ -48,7 +48,6 @@ public class ServerService extends AbstractCommunicationService {
         } catch (Exception e) {
             e.printStackTrace();
             log.info("Server socket closed with exception");
-        } finally {
             run();
         }
     }
@@ -66,7 +65,7 @@ public class ServerService extends AbstractCommunicationService {
             try {
                 byte[] command = receive();
                 byte[] response = execute(command);
-                send(response);
+                send(response, false);
             } catch (EOTException e) {
                 endOfTransmission = true;
             }

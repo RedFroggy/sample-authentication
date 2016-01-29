@@ -46,8 +46,6 @@ public class ClientServiceTest {
     public void init() throws Exception {
         Mockito.when(socket.getOutputStream()).thenReturn(outputStream);
         Mockito.when(socket.getInputStream()).thenReturn(inputStream);
-
-        //ReflectionTestUtils.setField(service, "cipherService", cipher);
     }
 
     protected Answer<Integer> inputStreamAnswer(final byte[] data) {
