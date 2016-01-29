@@ -3,31 +3,27 @@ package fr.redfroggy.sample.tpa.server.services;
 import com.google.common.primitives.Bytes;
 import fr.redfroggy.sample.tpa.commons.exceptions.EOTException;
 import fr.redfroggy.sample.tpa.commons.protocol.CommandSet;
-import fr.redfroggy.sample.tpa.commons.security.CipherService;
+import fr.redfroggy.sample.tpa.commons.services.AbstractCommunicationService;
 import fr.redfroggy.sample.tpa.commons.utils.BytesUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.DataOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 
+/**
+ * Server service
+ */
 @Slf4j
 @Service
-@Async
-public class ServerService {
-
-    protected static final int FRAME_SIZE = 64;
+public class ServerService extends AbstractCommunicationService {
 
     @Autowired
     protected ServerSocket socket;
-
-    @Autowired
-    protected CipherService cipherService;
 
     protected Socket connectionSocket;
 
@@ -35,10 +31,9 @@ public class ServerService {
 
     protected byte[] randomClient;
 
-    DataOutputStream out;
-
-    InputStream in;
-
+    /**
+     * Run server
+     */
     public void run() {
 
         try {
@@ -58,6 +53,11 @@ public class ServerService {
         }
     }
 
+    /**
+     * Open server socket
+     *
+     * @throws Exception If a transmission error occurred
+     */
     protected void listen() throws Exception {
 
         log.info("Client " + connectionSocket.getInetAddress().toString() + " connected");
@@ -74,6 +74,13 @@ public class ServerService {
         log.info("Client " + connectionSocket.getInetAddress().toString() + " disconnected");
     }
 
+    /**
+     * Interpret received command from client
+     *
+     * @param command Command to interpret
+     * @return Result bytes
+     * @throws Exception If an interpretation error occurred
+     */
     protected byte[] execute(byte[] command) throws Exception {
 
         if (command == null || command.length == 0) {
@@ -83,7 +90,7 @@ public class ServerService {
         byte ins = command[0];
         byte[] data = Arrays.copyOfRange(command, 1, command.length);
 
-        switch(CommandSet.Instruction.get(ins)) {
+        switch (CommandSet.Instruction.get(ins)) {
             case AUC:
                 return authenticateClient(data);
             case AUS:
@@ -99,6 +106,11 @@ public class ServerService {
         }
     }
 
+    /**
+     * Generate challenge (3Pass Authentication)
+     *
+     * @return Challenge bytes
+     */
     protected byte[] getChallenge() {
         log.info("Generate challenge");
         challenge = cipherService.random();
@@ -106,19 +118,12 @@ public class ServerService {
         return challenge;
     }
 
-    protected byte[] showMessage(byte[] data) {
-        try {
-            log.debug("ek(message): {}", BytesUtils.bytesToHex(data, ' '));
-            byte[] message = cipherService.decode(data);
-            log.debug("message: {}", BytesUtils.bytesToHex(message, ' '));
-            log.info("Message received : " + new String(message));
-            return CommandSet.receive(BytesUtils.crc32(message));
-        } catch (GeneralSecurityException e) {
-            log.error("Cannot decode message", e);
-            return CommandSet.error("Cryptographic error");
-        }
-    }
-
+    /**
+     * Authenticate client (3Pass Authentication)
+     *
+     * @param data Client authentication sequence
+     * @return Result
+     */
     protected byte[] authenticateClient(byte[] data) {
         try {
             log.info("Authentication Client");
@@ -147,6 +152,12 @@ public class ServerService {
 
     }
 
+    /**
+     * Authenticate server (3Pass Authentication)
+     *
+     * @param data Client challenge
+     * @return Server authentication sequence
+     */
     protected byte[] authenticateServer(byte[] data) {
         try {
             log.info("Authentication Server");
@@ -156,7 +167,7 @@ public class ServerService {
             byte[] ek = cipherService.encode(Bytes.concat(rndServer, data));
             log.debug("ek {}", BytesUtils.bytesToHex(ek, ' '));
 
-            cipherService.setSessionKey(randomClient, rndServer);
+            setSessionKey(randomClient, rndServer);
             log.info("Authentication succeed");
 
             return ek;
@@ -167,20 +178,22 @@ public class ServerService {
 
     }
 
-    protected void send(byte[] cmd) throws IOException {
-        out.write(cmd);
-        log.info("Send: {} bytes | {} | {}", cmd.length, BytesUtils.bytesToHex(cmd, ' '), new String(cmd));
-    }
-
-    protected byte[] receive() throws IOException {
-        byte[] result = new byte[0];
-        int count;
-        do {
-            byte[] frame = new byte[FRAME_SIZE];
-            count = in.read(frame);
-            result = Bytes.concat(result, Arrays.copyOf(frame, count));
-        } while (count >= FRAME_SIZE);
-        log.info("Receive: {} bytes | {} | {}", result.length, BytesUtils.bytesToHex(result, ' '), new String(result));
-        return result;
+    /**
+     * Display received messages
+     *
+     * @param data Data
+     * @return Result
+     */
+    protected byte[] showMessage(byte[] data) {
+        try {
+            log.debug("ek(message): {}", BytesUtils.bytesToHex(data, ' '));
+            byte[] message = cipherService.decode(data);
+            log.debug("message: {}", BytesUtils.bytesToHex(message, ' '));
+            log.info("Message received : " + new String(message));
+            return CommandSet.receive(BytesUtils.crc32(message));
+        } catch (GeneralSecurityException e) {
+            log.error("Cannot decode message", e);
+            return CommandSet.error("Cryptographic error");
+        }
     }
 }

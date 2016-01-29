@@ -10,12 +10,11 @@ import org.springframework.context.annotation.Configuration;
 import java.io.IOException;
 import java.net.ServerSocket;
 
+/**
+ * Server configuration
+ */
 @Configuration
 public class ServerConfiguration {
-
-    public static final String SOCKET = "serverSocket";
-
-    public static final String CIPHER = "serverCipher";
 
     @Autowired
     protected SocketSettings settings;
@@ -23,12 +22,23 @@ public class ServerConfiguration {
     @Autowired
     protected KeySettings keySettings;
 
-    @Bean(name = ServerConfiguration.SOCKET)
+    /**
+     * Construct server socket
+     *
+     * @return Server socket
+     * @throws IOException If an error occurred during socket construction
+     */
+    @Bean
     public ServerSocket getServerSocket() throws IOException {
         return new ServerSocket(settings.getPort());
     }
 
-    @Bean(name = ServerConfiguration.CIPHER)
+    /**
+     * Construct server cipher
+     *
+     * @return Server cipher
+     */
+    @Bean
     public CipherService getServerCipher() {
         Algorithm algorithm = Algorithm.valueOf(keySettings.getAlgorithm());
         byte[] key = BytesUtils.hexToBytes(keySettings.getKey());

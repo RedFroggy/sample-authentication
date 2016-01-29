@@ -22,10 +22,16 @@ public class Server {
     protected ServerService serverService;
 
     @PostConstruct
-    public void run() {
+    protected void run() {
         serverService.run();
     }
 
+    /**
+     * Main server method
+     *
+     * @param args Command args
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
         Server.log.info("Server is running");
         SpringApplication app = new SpringApplication(Server.class);

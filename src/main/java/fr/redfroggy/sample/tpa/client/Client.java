@@ -22,10 +22,16 @@ public class Client {
     protected ClientService clientService;
 
     @PostConstruct
-    public void run() {
+    protected void run() {
         clientService.run();
     }
 
+    /**
+     * Main client method
+     *
+     * @param args Command args
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
         Client.log.info("Client is running");
         SpringApplication app = new SpringApplication(Client.class);

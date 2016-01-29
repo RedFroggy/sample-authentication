@@ -2,36 +2,37 @@ package fr.redfroggy.sample.tpa.client.services;
 
 import com.google.common.primitives.Bytes;
 import fr.redfroggy.sample.tpa.commons.exceptions.AuthenticationException;
+import fr.redfroggy.sample.tpa.commons.exceptions.TransmissionException;
 import fr.redfroggy.sample.tpa.commons.protocol.CommandSet;
-import fr.redfroggy.sample.tpa.commons.security.CipherService;
+import fr.redfroggy.sample.tpa.commons.services.AbstractCommunicationService;
 import fr.redfroggy.sample.tpa.commons.utils.BytesUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 
+/**
+ * Client service
+ */
 @Slf4j
 @Service
-@Async
-public class ClientService {
-
-    protected static final int FRAME_SIZE = 64;
+public class ClientService extends AbstractCommunicationService {
 
     @Autowired
     protected Socket socket;
 
     @Autowired
-    protected CipherService cipherService;
+    protected BufferedReader inFromUser;
 
-    DataOutputStream out;
-
-    InputStream in;
-
+    /**
+     * Run client communication with server
+     */
     public void run() {
 
         try {
@@ -46,11 +47,10 @@ public class ClientService {
 
             // Send message
             log.info("Ready to send message");
-            while(!endOfTransmission) {
-                BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
+            while (!endOfTransmission) {
                 String sentence = inFromUser.readLine();
 
-                if (sentence.isEmpty()) {
+                if (sentence == null || sentence.isEmpty()) {
                     endOfTransmission = true;
                 } else {
                     sendMessage(sentence);
@@ -61,6 +61,8 @@ public class ClientService {
             socket.close();
             log.info("Client shutdown");
 
+        } catch (TransmissionException e) {
+            log.error("Transmission error", e);
         } catch (AuthenticationException e) {
             log.error("Authentication failed", e);
         } catch (IOException e) {
@@ -70,6 +72,11 @@ public class ClientService {
         }
     }
 
+    /**
+     * Launch authentication process
+     *
+     * @throws AuthenticationException If process failed
+     */
     public void authenticate() throws AuthenticationException {
         log.info("Authentication process");
 
@@ -111,7 +118,7 @@ public class ClientService {
             }
             log.debug("Server verification success");
 
-            cipherService.setSessionKey(rndC1, rndS2);
+            setSessionKey(rndC1, rndS2);
             log.info("Authentication succeed");
 
         } catch (GeneralSecurityException e) {
@@ -121,17 +128,24 @@ public class ClientService {
         }
     }
 
+    /**
+     * Send message to server
+     *
+     * @param msg Message content
+     * @throws Exception If an error occurred
+     */
     public void sendMessage(String msg) throws Exception {
-        byte[] toEncode = BytesUtils.pad(msg.getBytes(), cipherService.getAlgorithm().getBlocSize());
-        byte[] ekMsg = cipherService.encode(toEncode);
+        byte[] ekMsg = cipherService.encode(msg.getBytes());
         byte[] result = send(CommandSet.sendMessage(ekMsg));
 
         if (result[0] == CommandSet.Instruction.RCV.getCode()) {
             // Check if checksum is equal
             byte[] crc32ori = BytesUtils.crc32(msg.getBytes());
-            byte[] crc32res = BytesUtils.crc32(Arrays.copyOfRange(result, 1, result.length));
+            byte[] crc32res = Arrays.copyOfRange(result, 1, result.length);
 
             if (!Arrays.equals(crc32ori, crc32res)) {
+                throw new TransmissionException("Message CRC is invalid");
+            } else {
                 log.debug("CRC valid");
             }
 
@@ -142,21 +156,4 @@ public class ClientService {
         }
     }
 
-    protected byte[] send(byte[] cmd) throws IOException {
-        out.write(cmd);
-        log.info("Send: {} bytes | {} | {}", cmd.length, BytesUtils.bytesToHex(cmd, ' '), new String(cmd));
-        return receive();
-    }
-
-    protected byte[] receive() throws IOException {
-        byte[] result = new byte[0];
-        int count;
-        do {
-            byte[] frame = new byte[FRAME_SIZE];
-            count = in.read(frame);
-            result = Bytes.concat(result, Arrays.copyOf(frame, count));
-        } while (count >= FRAME_SIZE);
-        log.info("Receive: {} bytes | {} | {}", result.length, BytesUtils.bytesToHex(result, ' '), new String(result));
-        return result;
-    }
 }

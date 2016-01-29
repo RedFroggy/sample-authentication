@@ -12,13 +12,19 @@ import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Random;
 
+/**
+ * Cipher service use for cryptographic process
+ */
 @Slf4j
 public class CipherService {
 
-    protected Random randomizer = new Random();
-
+    /**
+     * Current algorithm
+     */
     @Getter
     protected Algorithm algorithm;
+
+    protected Random randomizer = new Random();
 
     protected Cipher cipher;
 
@@ -26,11 +32,22 @@ public class CipherService {
 
     protected boolean resetIV = true;
 
+    /**
+     * Construct cipher
+     *
+     * @param algorithm Algorithm to use
+     * @param key       Key to used
+     */
     public CipherService(Algorithm algorithm, byte[] key) {
         this.algorithm = algorithm;
-        this.key = key;
+        setKey(key);
     }
 
+    /**
+     * Get random value with algorithm bloc size
+     *
+     * @return Random value
+     */
     public byte[] random() {
 
         byte[] rndA = new byte[algorithm.getBlocSize()];
@@ -38,25 +55,53 @@ public class CipherService {
         return rndA;
     }
 
+    /**
+     * Encode data with current key and algorithm
+     *
+     * @param data Data to encode
+     * @return Encoded data
+     * @throws GeneralSecurityException Is an error occurred during cryptographic process
+     */
     public byte[] encode(byte[] data) throws GeneralSecurityException {
-        return cipher(data, Cipher.ENCRYPT_MODE);
+        byte[] toEncode = BytesUtils.pad(data, getAlgorithm().getBlocSize());
+        return cipher(toEncode, Cipher.ENCRYPT_MODE);
     }
 
+
+    /**
+     * Decode data with current key and algorithm
+     *
+     * @param data Data to decode
+     * @return Decoded data
+     * @throws GeneralSecurityException Is an error occurred during cryptographic process
+     */
     public byte[] decode(byte[] data) throws GeneralSecurityException {
-        return cipher(data, Cipher.DECRYPT_MODE);
+        byte[] decoded = cipher(data, Cipher.DECRYPT_MODE);
+        return BytesUtils.unpad(decoded);
     }
 
+    /**
+     * Reset init vector
+     */
     public void resetIV() {
         resetIV = true;
     }
 
+    /**
+     * Proccess cryptographic operation
+     *
+     * @param data Data to process
+     * @param type Type of process (Encode or Decode)
+     * @return Proceed data
+     * @throws GeneralSecurityException Is an error occurred during cryptographic process
+     */
     protected byte[] cipher(byte[] data, int type) throws GeneralSecurityException {
 
         if (cipher == null) {
             cipher = Cipher.getInstance(algorithm.getCipherAlgorithm());
         }
         if (resetIV) {
-            cipher.init(type, new SecretKeySpec(key, algorithm.getKeyAlgorithm()), new IvParameterSpec(new byte[key.length]));
+            cipher.init(type, new SecretKeySpec(key, algorithm.getKeyAlgorithm()), new IvParameterSpec(new byte[algorithm.getBlocSize()]));
         }
 
         log.debug("******** CIPHER STATUS *********");
@@ -75,37 +120,21 @@ public class CipherService {
         return result;
     }
 
-    public void setSessionKey(byte[] clientPart, byte[] serverPart) {
+    /**
+     * Set a new key for cryptographic operations
+     *
+     * @param newKey New key
+     */
+    public void setKey(byte[] newKey) {
+        resetIV();
 
-        log.debug("Build {} session key", getAlgorithm());
-        byte[] session;
-
-        switch (getAlgorithm()) {
-            case DES:
-                session = Bytes.concat(Arrays.copyOfRange(clientPart, 0, 4), Arrays.copyOfRange(serverPart, 0, 4));
-                break;
-            case TDES:
-                session = Bytes.concat(Arrays.copyOfRange(clientPart, 0, 4), Arrays.copyOfRange(serverPart, 0, 4),
-                        Arrays.copyOfRange(clientPart, 4, 8), Arrays.copyOfRange(serverPart, 4, 8));
-                break;
-            case AES:
-                session =Bytes.concat(Arrays.copyOfRange(clientPart, 0, 4), Arrays.copyOfRange(serverPart, 0, 4),
-                        Arrays.copyOfRange(clientPart, 12, 16), Arrays.copyOfRange(serverPart, 12, 16));
-                break;
-            case TKTDES:
-                session =Bytes.concat(Arrays.copyOfRange(clientPart, 0, 4), Arrays.copyOfRange(serverPart, 0, 4),
-                        Arrays.copyOfRange(clientPart, 6, 10), Arrays.copyOfRange(serverPart, 6, 10),
-                        Arrays.copyOfRange(clientPart, 12, 16), Arrays.copyOfRange(serverPart, 12, 16));
-                break;
-            default:
-                session = new byte[0];
-                break;
+        if (algorithm.equals(Algorithm.DES) && newKey.length == 8) {
+            key = Bytes.concat(newKey, newKey, newKey);
+        } else if ((algorithm.equals(Algorithm.DES) || algorithm.equals(Algorithm.TDES) )&& newKey.length == 16) {
+            key = Bytes.concat(newKey, Arrays.copyOf(newKey, 8));
+        } else {
+            key = newKey;
         }
 
-        log.debug("Client random: {}", BytesUtils.bytesToHex(clientPart, ' '));
-        log.debug("Server random: {}", BytesUtils.bytesToHex(serverPart, ' '));
-        log.debug("Session key is now: {}", BytesUtils.bytesToHex(session, ' '));
-        resetIV();
-        key = session;
     }
 }

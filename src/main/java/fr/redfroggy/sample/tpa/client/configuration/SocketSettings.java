@@ -12,8 +12,16 @@ import org.springframework.stereotype.Component;
 @Data
 public class SocketSettings {
 
+    /**
+     * Server address
+     * default: localhost
+     */
     protected String host = "localhost";
 
+    /**
+     * Serve port
+     * default: 12345
+     */
     protected int port = 12345;
 
 }
