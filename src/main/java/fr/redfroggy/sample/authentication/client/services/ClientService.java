@@ -76,6 +76,11 @@ public class ClientService extends AbstractCommunicationService {
         }
     }
 
+    /**
+     * Exchange RSA public keys between client and server
+     *
+     * @throws AuthenticationException
+     */
     public void exchangeRSAKeys() throws AuthenticationException {
         log.info("Exchange RSA keys");
 

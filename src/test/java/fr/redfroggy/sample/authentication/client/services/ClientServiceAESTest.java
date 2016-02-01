@@ -20,7 +20,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ClientServiceTest {
+public class ClientServiceAESTest {
 
     protected static final byte[] KEY_AES = BytesUtils.hexToBytes("7788554411224455DD66E8F6F2B4A54E");
 
@@ -60,7 +60,7 @@ public class ClientServiceTest {
     }
 
     @Test
-    public void run_Nominal() throws Exception {
+    public void run_Nominal_AES() throws Exception {
 
         /**
          * Server responses
@@ -94,6 +94,11 @@ public class ClientServiceTest {
                 .thenReturn(null);
 
         service.run();
+
+        Mockito.verify(outputStream).write(BytesUtils.hexToBytes("13"), 0, 1);
+        Mockito.verify(outputStream).write(BytesUtils.hexToBytes("12 14 DF 8C C9 F9 A0 C5 E3 26 21 F9 32 2C AE 72 80 3E 9F 1B 38 B9 E2 CD C3 81 0A D1 B4 9C 02 91 C5"), 0, 33);
+        Mockito.verify(outputStream).write(BytesUtils.hexToBytes("11 77 88 99 AA BB CC D0 01 12 23 34 45 56 6D EE FF"), 0, 17);
+        Mockito.verify(outputStream).write(BytesUtils.hexToBytes("20 4E DA 43 21 84 2C 82 F6 43 DB 9C C2 66 06 20 71 70 A9 79 D5 E3 40 EE 5A D0 B4 4F 88 B2 1A C2 57"), 0, 33);
 
         Mockito.verify(socket, Mockito.times(1)).close();
     }
