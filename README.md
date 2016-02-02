@@ -10,3 +10,7 @@ An AES 128bits key is used. By default, the port 12345 is used.
 # Run
 Server : mvn exec:java -Pserver
 Client : mvn exec:java -Pclient
+
+# CI
+Develop: [![Build Status](https://api.travis-ci.org/RedFroggy/sample-authentication.svg?branch=develop)](https://travis-ci.org/RedFroggy/sample-authentication)
+Master: [![Build Status](https://api.travis-ci.org/RedFroggy/sample-authentication.svg?branch=master)](https://travis-ci.org/RedFroggy/sample-authentication)
